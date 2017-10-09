@@ -9,6 +9,8 @@
     :license: BSD, see LICENSE for details.
 """
 
+import roman
+
 from six import iteritems
 
 from docutils import nodes
@@ -30,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 
 class TocTreeCollector(EnvironmentCollector):
+    number_convertor = {
+        'decimal': str,
+        'roman': roman.toRoman
+    }
+
     def clear_doc(self, app, env, docname):
         # type: (Sphinx, BuildEnvironment, unicode) -> None
         env.tocs.pop(docname, None)
@@ -167,12 +174,18 @@ class TocTreeCollector(EnvironmentCollector):
                     numstack[-1] += 1
                     if depth > 0:
                         number = tuple(numstack)
+                        secnums[subnode[0]['anchorname']] = \
+                            numformat.format('.'.join(map(numconv, number)))
                     else:
                         number = None
-                    secnums[subnode[0]['anchorname']] = \
-                        subnode[0]['secnumber'] = number
+                        secnums[subnode[0]['anchorname']] = None
+                    subnode[0]['secnumber'] = number
+                    subnode[0]['secnumber-format'] = numformat
+                    subnode[0]['secnumber-style'] = numstyle
                     if titlenode:
                         titlenode['secnumber'] = number
+                        titlenode['secnumber-format'] = numformat
+                        titlenode['secnumber-style'] = numstyle
                         titlenode = None
                 elif isinstance(subnode, addnodes.toctree):
                     _walk_toctree(subnode, depth)
@@ -204,6 +217,9 @@ class TocTreeCollector(EnvironmentCollector):
                 if depth:
                     # every numbered toctree gets new numbering
                     numstack = [0]
+                    numformat = toctreenode.get('number-format', '{}')
+                    numstyle = toctreenode.get('number-style', 'decimal')
+                    numconv = self.number_convertor[numstyle]
                     _walk_toctree(toctreenode, depth)
 
         return rewrite_needed

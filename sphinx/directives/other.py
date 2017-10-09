@@ -52,6 +52,8 @@ class TocTree(Directive):
         'hidden': directives.flag,
         'includehidden': directives.flag,
         'numbered': int_or_nothing,
+        'number-style': directives.unchanged,
+        'number-format': directives.unchanged,
         'titlesonly': directives.flag,
         'reversed': directives.flag,
     }
@@ -126,6 +128,8 @@ class TocTree(Directive):
         subnode['hidden'] = 'hidden' in self.options
         subnode['includehidden'] = 'includehidden' in self.options
         subnode['numbered'] = self.options.get('numbered', 0)
+        subnode['number-style'] = self.options.get('number-style', 'decimal')
+        subnode['number-format'] = self.options.get('number-format', '{}')
         subnode['titlesonly'] = 'titlesonly' in self.options
         set_source_info(self, subnode)
         wrappernode = nodes.compound(classes=['toctree-wrapper'])

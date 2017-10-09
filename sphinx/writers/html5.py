@@ -12,6 +12,7 @@
 import sys
 import posixpath
 import os
+import roman
 
 from six import string_types
 from docutils import nodes
@@ -38,6 +39,11 @@ class HTML5Translator(BaseTranslator):
     """
     Our custom HTML translator.
     """
+
+    number_convertor = {
+        'decimal': str,
+        'roman': roman.toRoman
+    }
 
     def __init__(self, builder, *args, **kwds):
         # type: (StandaloneHTMLBuilder, Any, Any) -> None
@@ -237,8 +243,7 @@ class HTML5Translator(BaseTranslator):
         self.body.append(self.starttag(node, 'a', '', **atts))
 
         if node.get('secnumber'):
-            self.body.append(('%s' + self.secnumber_suffix) %
-                             '.'.join(map(str, node['secnumber'])))
+            self.body.append(self.build_secnumber(node))
 
     def visit_number_reference(self, node):
         # type: (nodes.Node) -> None
@@ -269,11 +274,16 @@ class HTML5Translator(BaseTranslator):
         # type: (nodes.Node) -> None
         self.depart_admonition(node)
 
+    def build_secnumber(self, node):
+        conv = self.number_convertor[node.get('secnumber-style')]
+        num = '.'.join(map(conv, node['secnumber']))
+        return (node.get('secnumber-format').format(num) +
+                self.secnumber_suffix)
+
     def add_secnumber(self, node):
         # type: (nodes.Node) -> None
         if node.get('secnumber'):
-            self.body.append('.'.join(map(str, node['secnumber'])) +
-                             self.secnumber_suffix)
+            self.body.append(self.build_secnumber(node))
         elif isinstance(node.parent, nodes.section):
             if self.builder.name == 'singlehtml':
                 docname = self.docnames[-1]
@@ -285,8 +295,7 @@ class HTML5Translator(BaseTranslator):
                 if anchorname not in self.builder.secnumbers:
                     anchorname = ''  # try first heading which has no anchor
             if self.builder.secnumbers.get(anchorname):
-                numbers = self.builder.secnumbers[anchorname]
-                self.body.append('.'.join(map(str, numbers)) +
+                self.body.append(self.builder.secnumbers[anchorname] +
                                  self.secnumber_suffix)
 
     def add_fignumber(self, node):
