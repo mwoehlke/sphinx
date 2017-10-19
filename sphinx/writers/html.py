@@ -267,8 +267,7 @@ class HTMLTranslator(BaseTranslator):
         self.body.append(self.starttag(node, 'a', '', **atts))
 
         if node.get('secnumber'):
-            self.body.append(('%s' + self.secnumber_suffix) %
-                             '.'.join(map(str, node['secnumber'])))
+            self.body.append(self.build_secnumber(node))
 
     def visit_number_reference(self, node):
         # type: (nodes.Node) -> None
@@ -300,11 +299,15 @@ class HTMLTranslator(BaseTranslator):
         # type: (nodes.Node) -> None
         self.depart_admonition(node)
 
+    def build_secnumber(self, node):
+        style = node.get('secnumber-style')
+        func = self.builder.env.get_secnumber_formatter(style)
+        return (func(node['secnumber']) + self.secnumber_suffix)
+
     def add_secnumber(self, node):
         # type: (nodes.Node) -> None
         if node.get('secnumber'):
-            self.body.append('.'.join(map(str, node['secnumber'])) +
-                             self.secnumber_suffix)
+            self.body.append(self.build_secnumber(node))
         elif isinstance(node.parent, nodes.section):
             if self.builder.name == 'singlehtml':
                 docname = self.docnames[-1]
@@ -316,8 +319,7 @@ class HTMLTranslator(BaseTranslator):
                 if anchorname not in self.builder.secnumbers:
                     anchorname = ''  # try first heading which has no anchor
             if self.builder.secnumbers.get(anchorname):
-                numbers = self.builder.secnumbers[anchorname]
-                self.body.append('.'.join(map(str, numbers)) +
+                self.body.append(self.builder.secnumbers[anchorname] +
                                  self.secnumber_suffix)
 
     def add_fignumber(self, node):

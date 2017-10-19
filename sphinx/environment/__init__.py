@@ -142,6 +142,8 @@ class BuildEnvironment(object):
         del env.config.values
         domains = env.domains
         del env.domains
+        secnumber_styles = env.secnumber_styles
+        del env.secnumber_styles
         # remove potentially pickling-problematic values from config
         for key, val in list(vars(env.config).items()):
             if key.startswith('_') or \
@@ -151,6 +153,7 @@ class BuildEnvironment(object):
                 del env.config[key]
         pickle.dump(env, f, pickle.HIGHEST_PROTOCOL)
         # reset attributes
+        env.secnumber_styles = secnumber_styles
         env.domains = domains
         env.config.values = values
         env.app = app
@@ -242,6 +245,10 @@ class BuildEnvironment(object):
                                     # docnames that have :glob: toctrees
         self.numbered_toctrees = set()  # type: Set[unicode]
                                         # docnames that have :numbered: toctrees
+
+        self.secnumber_styles = {
+            'default': lambda nums: '.'.join(map(str, nums))
+        }
 
         # domain-specific inventories, here to be pickled
         self.domaindata = {}        # type: Dict[unicode, Dict]
@@ -859,6 +866,20 @@ class BuildEnvironment(object):
             return self.domains[domainname]
         except KeyError:
             raise ExtensionError('Domain %r is not registered' % domainname)
+
+    def get_secnumber_formatter(self, stylename):
+        # type: (unicode) -> Callable
+        """Return the section number formatting function for the specified
+        style name.
+
+        Raises an ExtensionError if no formatting function is registered for
+        the style name.
+        """
+        try:
+            return self.secnumber_styles[stylename]
+        except KeyError:
+            raise ExtensionError('Section numbering style %r '
+                                 'is not registered' % stylename)
 
     # --------- RESOLVING REFERENCES AND TOCTREES ------------------------------
 

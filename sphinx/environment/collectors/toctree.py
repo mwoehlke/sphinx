@@ -167,12 +167,15 @@ class TocTreeCollector(EnvironmentCollector):
                     numstack[-1] += 1
                     if depth > 0:
                         number = tuple(numstack)
+                        secnums[subnode[0]['anchorname']] = numformat(number)
                     else:
                         number = None
-                    secnums[subnode[0]['anchorname']] = \
-                        subnode[0]['secnumber'] = number
+                        secnums[subnode[0]['anchorname']] = None
+                    subnode[0]['secnumber'] = number
+                    subnode[0]['secnumber-style'] = numstyle
                     if titlenode:
                         titlenode['secnumber'] = number
+                        titlenode['secnumber-style'] = numstyle
                         titlenode = None
                 elif isinstance(subnode, addnodes.toctree):
                     _walk_toctree(subnode, depth)
@@ -204,6 +207,8 @@ class TocTreeCollector(EnvironmentCollector):
                 if depth:
                     # every numbered toctree gets new numbering
                     numstack = [0]
+                    numstyle = toctreenode.get('number-style', 'default')
+                    numformat = env.get_secnumber_formatter(numstyle)
                     _walk_toctree(toctreenode, depth)
 
         return rewrite_needed

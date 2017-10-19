@@ -121,6 +121,7 @@ class Sphinx(object):
         self.enumerable_nodes = {}              # type: Dict[nodes.Node, Tuple[unicode, Callable]]  # NOQA
         self.post_transforms = []               # type: List[Transform]
         self.html_themes = {}                   # type: Dict[unicode, unicode]
+        self.secnumber_styles = {}              # type: Dict[unicode, Callable]
 
         self.srcdir = srcdir
         self.confdir = confdir
@@ -274,6 +275,7 @@ class Sphinx(object):
             self.env.find_files(self.config, self.builder)
             for domain in self.registry.create_domains(self.env):
                 self.env.domains[domain.name] = domain
+            self.env.secnumber_styles.update(self.secnumber_styles)
         else:
             try:
                 logger.info(bold(__('loading pickled environment... ')), nonl=True)
@@ -283,6 +285,7 @@ class Sphinx(object):
                 for domain in self.registry.create_domains(self.env):
                     # this can raise if the data version doesn't fit
                     self.env.domains[domain.name] = domain
+                self.env.secnumber_styles.update(self.secnumber_styles)
                 logger.info(__('done'))
             except Exception as err:
                 if isinstance(err, IOError) and err.errno == ENOENT:
@@ -688,6 +691,11 @@ class Sphinx(object):
         # type: (unicode, unicode) -> None
         logger.debug('[app] adding HTML theme: %r, %r', name, theme_path)
         self.html_themes[name] = theme_path
+
+    def add_secnumber_style(self, name, build_secnumber):
+        # type: (unicode, Callable) -> None
+        logger.debug('[app] adding section numbering style: %r, %r', name, build_secnumber)
+        self.secnumber_styles[name] = build_secnumber
 
 
 class TemplateBridge(object):
